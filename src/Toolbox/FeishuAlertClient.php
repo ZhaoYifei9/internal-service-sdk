@@ -86,10 +86,16 @@ final class FeishuAlertClient
      */
     public function sendCustom(array $payload): array
     {
-        return $this->decodeResponse(
-            $this->request('/open/feishu/message/custom', $payload),
-            'Feishu custom message request failed'
-        );
+        $response = $this->request('/open/feishu/message/custom', $payload);
+        if (!$response->isSuccessful()) {
+            throw new RemoteServiceException(
+                'Feishu custom message request failed',
+                $response->statusCode()
+            );
+        }
+
+        // The legacy toolbox endpoint returns an empty JSON response on success.
+        return $response->json();
     }
 
     /** @param array<string, mixed> $payload */

@@ -58,12 +58,13 @@ final class FeishuAlertClientTest extends TestCase
     public function testSendsLegacyCustomFallback(): void
     {
         $transport = new FakeTransport([
-            new HttpResponse(200, '{"code":0,"message":"success"}'),
+            new HttpResponse(200, ''),
         ]);
         $client = $this->client($transport);
 
-        $client->sendCustom(['content' => 'fallback', 'severity' => 'P1']);
+        $response = $client->sendCustom(['content' => 'fallback', 'severity' => 'P1']);
 
+        self::assertSame([], $response);
         self::assertSame(
             'http://toolbox-service/open/feishu/message/custom',
             $transport->requests[0]['url']

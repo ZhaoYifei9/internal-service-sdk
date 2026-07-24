@@ -1,6 +1,6 @@
 {
   "name": "internal-services/service-sdk",
-  "description": "Reusable PHP clients for New NG internal HTTP services.",
+  "description": "Reusable PHP clients for internal HTTP services.",
   "type": "library",
   "license": "proprietary",
   "require": {
