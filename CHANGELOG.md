@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 - 2026-07-24
+
+- 将规范仓库迁至 `ZhaoYifei9/internal-service-sdk`，准备通过 Packagist 公开分发。
+- 安装方式收敛为标准 Composer 包，不再要求业务仓库配置 VCS 地址或 GitHub 凭证。
+- 对公开历史和示例完成隐私清理，Git 元数据统一使用 GitHub noreply 邮箱。
+
 ## 0.3.0 - 2026-07-24
 
 - 增加通知设备注册强类型契约，统一字段规范、平台常量及调用前校验。

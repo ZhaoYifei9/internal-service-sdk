@@ -3,6 +3,13 @@
   "description": "Reusable PHP clients for internal HTTP services.",
   "type": "library",
   "license": "proprietary",
+  "homepage": "https://github.com/ZhaoYifei9/internal-service-sdk",
+  "keywords": [
+    "hmac",
+    "internal-services",
+    "notification",
+    "swoole"
+  ],
   "require": {
     "php": ">=7.4",
     "ext-json": "*",
@@ -23,6 +30,10 @@
   },
   "scripts": {
     "test": "phpunit --colors=always"
+  },
+  "support": {
+    "issues": "https://github.com/ZhaoYifei9/internal-service-sdk/issues",
+    "source": "https://github.com/ZhaoYifei9/internal-service-sdk"
   },
   "config": {
     "optimize-autoloader": true,

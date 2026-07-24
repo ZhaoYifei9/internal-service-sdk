@@ -18,7 +18,7 @@ final class FeishuAlertClientTest extends TestCase
         ]);
         $client = $this->client($transport);
 
-        $response = $client->sendAlert('NG-NEW-SYSTEM-ERROR', ['message' => ['error' => 'boom']], 1);
+        $response = $client->sendAlert('COUNTRY-SYSTEM-ERROR', ['message' => ['error' => 'boom']], 1);
 
         $request = $transport->requests[0];
         $payload = json_decode($request['body'], true);
@@ -27,7 +27,7 @@ final class FeishuAlertClientTest extends TestCase
             'http://toolbox-service/open/feishu/message/v2/custom',
             $request['url']
         );
-        self::assertSame('NG-NEW-SYSTEM-ERROR', $payload['alertId']);
+        self::assertSame('COUNTRY-SYSTEM-ERROR', $payload['alertId']);
         self::assertSame('country-loan-api', $payload['data']['app_name']);
         self::assertSame('production', $payload['data']['env']);
         self::assertSame(1, $payload['data']['system']);

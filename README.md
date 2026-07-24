@@ -14,23 +14,13 @@
 
 ## 安装
 
-私有仓库通过 Composer VCS 安装：
+包发布在 Packagist，可直接安装：
 
-```json
-{
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "git@github.com:ZhaoYifei9/internal-service-sdk.git"
-    }
-  ],
-  "require": {
-    "internal-services/service-sdk": "^0.3"
-  }
-}
+```bash
+composer require internal-services/service-sdk:^0.3
 ```
 
-部署机需要具备该私有仓库的只读权限。
+无需配置 Composer VCS Repository、GitHub Token 或 SSH Deploy Key。
 
 ## data-mid
 
@@ -104,7 +94,7 @@ $client = new FeishuAlertClient([
     'timeout' => 10,
 ]);
 
-$client->sendAlert('NG-NEW-SYSTEM-ERROR', [
+$client->sendAlert('COUNTRY-SYSTEM-ERROR', [
     'message' => ['error' => 'example'],
 ], 1);
 ```
