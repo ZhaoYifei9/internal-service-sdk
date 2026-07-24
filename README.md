@@ -25,7 +25,7 @@
     }
   ],
   "require": {
-    "internal-services/service-sdk": "^0.2"
+    "internal-services/service-sdk": "^0.3"
   }
 }
 ```
@@ -68,6 +68,7 @@ SDK 不负责 Redis 锁、协程调度和失败日志：这些运行策略仍由
 ## 通知设备注册
 
 ```php
+use Internal\ServiceSdk\Notification\DeviceRegistration;
 use Internal\ServiceSdk\Notification\NotificationDeviceClient;
 
 $client = new NotificationDeviceClient([
@@ -77,15 +78,19 @@ $client = new NotificationDeviceClient([
     'timeout' => 5,
 ]);
 
-$client->register('install-uuid', [
-    'country_code' => 'NG',
-    'app_id' => '5001',
-    'platform' => 'ANDROID',
-    'fcm_token' => '当前 Token',
-    'aaid' => '可选 GAID',
-    'token_updated_at' => '2026-07-24T12:00:00.000000+01:00',
-]);
+$client->registerDevice(new DeviceRegistration(
+    'install-uuid',
+    'NG',
+    '5001',
+    DeviceRegistration::PLATFORM_ANDROID,
+    '当前 Token（至少 20 字节）',
+    '2026-07-24T12:00:00.000000+01:00',
+    '可选 GAID'
+));
 ```
+
+`DeviceRegistration` 在发出请求前统一规范国家、平台和可选 AAID，并校验通知服务的完整字段、长度和
+RFC 3339 时间契约。原有 `register($installUuid, $payload)` 作为低层兼容入口继续保留。
 
 ## toolbox 飞书告警
 

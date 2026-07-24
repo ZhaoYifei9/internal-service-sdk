@@ -7,6 +7,7 @@ namespace Internal\ServiceSdk\Tests;
 use Internal\ServiceSdk\Auth\InternalHmacSigner;
 use Internal\ServiceSdk\Exception\RemoteServiceException;
 use Internal\ServiceSdk\Http\HttpResponse;
+use Internal\ServiceSdk\Notification\DeviceRegistration;
 use Internal\ServiceSdk\Notification\NotificationDeviceClient;
 use PHPUnit\Framework\TestCase;
 
@@ -71,6 +72,28 @@ final class NotificationDeviceClientTest extends TestCase
             self::assertSame(401, $exception->statusCode());
             self::assertStringNotContainsString($token, $exception->getMessage());
         }
+    }
+
+    public function testRegisterDeviceUsesValidatedContract(): void
+    {
+        $transport = new FakeTransport([
+            new HttpResponse(200, '{"code":"OK","data":{"status":"ACTIVE"}}'),
+        ]);
+        $registration = new DeviceRegistration(
+            'install-uuid',
+            'ng',
+            '5001',
+            'android',
+            str_repeat('t', 40),
+            '2026-07-24T12:00:00+01:00'
+        );
+
+        $this->client($transport)->registerDevice($registration);
+
+        self::assertSame(
+            $registration->payload(),
+            json_decode($transport->requests[0]['body'], true)
+        );
     }
 
     private function client(FakeTransport $transport): NotificationDeviceClient

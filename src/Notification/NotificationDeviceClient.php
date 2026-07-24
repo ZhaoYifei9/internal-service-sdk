@@ -37,7 +37,15 @@ final class NotificationDeviceClient
         return $this->http->isConfigured();
     }
 
+    /** @return array<string, mixed> */
+    public function registerDevice(DeviceRegistration $registration): array
+    {
+        return $this->register($registration->installUuid(), $registration->payload());
+    }
+
     /**
+     * Low-level compatibility entry point. New callers should use registerDevice().
+     *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
