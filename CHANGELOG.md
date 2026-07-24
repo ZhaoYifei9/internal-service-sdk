@@ -2,6 +2,9 @@
 
 ## 0.4.0 - 2026-07-24
 
+- 增加 `DataMidReporter`、可注入调度器与生产端去重租约，统一命名事件、失败释放和批量结果判断。
+- 增加飞书 `AlertCatalog`、`FeishuNotifier` 与结构化结果，统一 V2 告警和旧接口安全兜底。
+- 增加 AJ 设备/事件 DTO 与可配置重试客户端；国家必须显式提供 `clientVersion`。
 - 增加支持原始 Body、稳定 Query、Actor/Scopes、Request ID 和附加 Header 的 `SignedHttpClient`。
 - 增加 `InternalRequestContext` 与 `QueryString`，统一 Toolbox/BFF 管理端代理的签名输入。
 - 增加可选 `GuzzleHttpTransport`，并将 Swoole 从 Composer 强制依赖调整为按运行时选择。

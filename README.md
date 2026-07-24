@@ -3,22 +3,23 @@
 供各国家 PHP 业务项目复用的内部 HTTP 客户端，兼容 PHP 7.4。当前包含：
 
 - 固定九行 Canonical Request 的 `X-Internal-*` HMAC-SHA256 签名；
-- data-mid 事件类型、稳定事件 ID、事件工厂、订单上下文脱敏和批量结果解析；
+- data-mid 事件类型、稳定事件 ID、事件工厂、订单上下文脱敏、批量结果及高阶上报门面；
 - data-mid 单事件和批量事件 HTTP 上报；
 - service-notification FCM 设备注册；
-- toolbox-service 飞书 V2 告警和旧自定义消息接口；
+- toolbox-service 飞书 V2 告警、告警目录及旧自定义消息兜底；
+- AJ 设备与事件 DTO、JSON 客户端及可配置重试；
 - 支持服务身份与 Toolbox Actor/Scopes 的原始 Signed HTTP 请求；
 - 可替换的 `TransportInterface`，以及可选 Swoole、Guzzle Transport。
 
-包不读取环境变量、不访问 Redis 或数据库，也不负责业务协程、事件去重、告警 ID 和 Payload 取数。调用方必须
-显式注入 URL、Client ID、Secret、国家和应用信息；Secret 不得写入仓库或日志。
+包不读取环境变量、不访问 Redis 或数据库。调用方负责注入具体调度器、去重存储、告警 ID、业务 Payload 与运行配置；
+SDK 统一调度/去重接口、上报生命周期和协议客户端。Secret 不得写入仓库或日志。
 
 ## 安装
 
 包发布在 Packagist，可直接安装：
 
 ```bash
-composer require internal-services/service-sdk:^0.3
+composer require internal-services/service-sdk:^0.4
 ```
 
 无需配置 Composer VCS Repository、GitHub Token 或 SSH Deploy Key。
@@ -54,7 +55,8 @@ $response = $client->reportEvent($event->payload());
 `OrderContext` 也可独立使用。`reportEvent()` 和 `reportBatch()` 返回 `HttpResponse`。需要推进批处理断点时使用
 `reportBatchResult()`，只有 `BatchReportResult::isComplete($expected)` 为 `true` 才表示全部接收。
 
-SDK 不负责 Redis 锁、协程调度和失败日志：这些运行策略仍由国家项目的轻量 Adapter 决定。
+推荐业务入口使用 `DataMidReporter`：它统一命名事件、异步派发、生产端去重租约、失败释放和批量完整接收判断。
+国家项目用 `CallableDispatcher` 适配协程，以 `DedupStoreInterface` 适配 Redis；SDK 自身不依赖具体框架或缓存实现。
 
 ## 内部管理端请求
 
@@ -119,7 +121,9 @@ RFC 3339 时间契约。原有 `register($installUuid, $payload)` 作为低层�
 ## toolbox 飞书告警
 
 ```php
+use Internal\ServiceSdk\Toolbox\AlertCatalog;
 use Internal\ServiceSdk\Toolbox\FeishuAlertClient;
+use Internal\ServiceSdk\Toolbox\FeishuNotifier;
 
 $client = new FeishuAlertClient([
     'base_url' => getenv('FEISHU_BASE_URL'),
@@ -128,12 +132,25 @@ $client = new FeishuAlertClient([
     'timeout' => 10,
 ]);
 
-$client->sendAlert('COUNTRY-SYSTEM-ERROR', [
+$notifier = new FeishuNotifier($client, new AlertCatalog([
+    'SYSTEM_ERROR' => [
+        'id' => 'COUNTRY-SYSTEM-ERROR',
+        'description' => '系统错误',
+    ],
+]));
+$notifier->notify('SYSTEM_ERROR', [
     'message' => ['error' => 'example'],
 ], 1);
 ```
 
-toolbox 返回 `code=0` 表示已发送，`code=200` 表示规则判定后跳过，两者都属于正常受理。
+toolbox 返回 `code=0` 表示已发送，`code=200` 表示规则判定后跳过，两者都属于正常受理。V2 调用失败时，
+`FeishuNotifier` 可自动调用旧自定义消息接口兜底，且不会把原始业务 Payload 复制到兜底内容。
+
+## AJ 事件客户端
+
+`AjClient` 统一 `/api/device/ma` 与 `/api/event` 的 JSON 请求、超时、响应解析和有限重试；协程项目可注入非阻塞
+Sleeper。`AjEvent` 强制调用方显式传入 `clientVersion`，避免复制国家代码时沿用错误值。订单状态映射、首复贷、
+风控判断、SQL、Redis 业务幂等和延迟任务仍属于业务项目。
 
 ## 请求上下文与测试
 
