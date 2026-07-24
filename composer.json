@@ -12,8 +12,7 @@
   ],
   "require": {
     "php": ">=7.4",
-    "ext-json": "*",
-    "ext-swoole": "*"
+    "ext-json": "*"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.6"
@@ -27,6 +26,10 @@
     "psr-4": {
       "Internal\\ServiceSdk\\Tests\\": "tests/"
     }
+  },
+  "suggest": {
+    "ext-swoole": "Required when using the default Swoole coroutine transport.",
+    "guzzlehttp/guzzle": "Required when using GuzzleHttpTransport."
   },
   "scripts": {
     "test": "phpunit --colors=always"

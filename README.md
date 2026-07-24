@@ -7,7 +7,8 @@
 - data-mid 单事件和批量事件 HTTP 上报；
 - service-notification FCM 设备注册；
 - toolbox-service 飞书 V2 告警和旧自定义消息接口；
-- 默认 Swoole 协程 HTTP Transport，以及可替换的 `TransportInterface`。
+- 支持服务身份与 Toolbox Actor/Scopes 的原始 Signed HTTP 请求；
+- 可替换的 `TransportInterface`，以及可选 Swoole、Guzzle Transport。
 
 包不读取环境变量、不访问 Redis 或数据库，也不负责业务协程、事件去重、告警 ID 和 Payload 取数。调用方必须
 显式注入 URL、Client ID、Secret、国家和应用信息；Secret 不得写入仓库或日志。
@@ -54,6 +55,39 @@ $response = $client->reportEvent($event->payload());
 `reportBatchResult()`，只有 `BatchReportResult::isComplete($expected)` 为 `true` 才表示全部接收。
 
 SDK 不负责 Redis 锁、协程调度和失败日志：这些运行策略仍由国家项目的轻量 Adapter 决定。
+
+## 内部管理端请求
+
+Toolbox/BFF 调用 data-mid、service-notification 或 service-short-link 管理端时，使用
+`SignedHttpClient` 对实际发送的 Method、Path + Query 和原始 Body 字节签名，并通过
+`InternalRequestContext` 传递已经由 Toolbox 鉴权的操作人和权限。SDK 不读取 Laravel Request、用户模型或
+权限数据，也不会自行授予 Scope。
+
+```php
+use Internal\ServiceSdk\Auth\InternalRequestContext;
+use Internal\ServiceSdk\Http\GuzzleHttpTransport;
+use Internal\ServiceSdk\Http\QueryString;
+use Internal\ServiceSdk\Http\SignedHttpClient;
+
+$client = new SignedHttpClient([
+    'base_url' => getenv('DATA_MID_BASE_URL'),
+    'client_id' => getenv('DATA_MID_CLIENT_ID'),
+    'secret' => getenv('DATA_MID_CLIENT_SECRET'),
+    'timeout' => 10,
+], new GuzzleHttpTransport());
+
+$context = new InternalRequestContext(
+    'operator-id',
+    'operator@example.com',
+    'mid.rules.read,mid.rules.edit',
+    'request-id'
+);
+$path = QueryString::append('/admin/v1/rules', ['country_code' => 'NG']);
+$response = $client->request('GET', $path, '', $context);
+```
+
+`Idempotency-Key` 等不属于九行 Canonical 的协议 Header 可以通过第五个参数传入；
+`X-Internal-*` 和 `X-Request-Id` 禁止从附加 Header 覆盖。
 
 ## 通知设备注册
 
@@ -105,6 +139,9 @@ toolbox 返回 `code=0` 表示已发送，`code=200` 表示规则判定后跳过
 
 构造函数支持注入 Transport、时钟、Nonce 和 Request ID Resolver。Hyperf 项目可用 Resolver 传递当前请求 ID；
 单元测试使用 Fake Transport 验证完整方法、URL、正文和签名，不需要启动公共服务。
+
+`ext-swoole` 与 `guzzlehttp/guzzle` 均为按运行时选择的可选依赖：原有 Hyperf/Swoole 项目可以继续使用默认
+`SwooleHttpTransport`；Laravel 等项目显式注入 `GuzzleHttpTransport`，安装 SDK 不再强制要求 Swoole 扩展。
 
 ```bash
 composer install

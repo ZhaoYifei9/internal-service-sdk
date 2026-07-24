@@ -16,6 +16,10 @@ final class SwooleHttpTransport implements TransportInterface
         array $headers,
         int $timeout
     ): HttpResponse {
+        if (!class_exists(Client::class)) {
+            throw new TransportException('ext-swoole is required for SwooleHttpTransport');
+        }
+
         $parts = parse_url($url);
         $scheme = strtolower((string) ($parts['scheme'] ?? ''));
         $host = (string) ($parts['host'] ?? '');

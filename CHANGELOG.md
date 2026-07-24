@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 - 2026-07-24
+
+- 增加支持原始 Body、稳定 Query、Actor/Scopes、Request ID 和附加 Header 的 `SignedHttpClient`。
+- 增加 `InternalRequestContext` 与 `QueryString`，统一 Toolbox/BFF 管理端代理的签名输入。
+- 增加可选 `GuzzleHttpTransport`，并将 Swoole 从 Composer 强制依赖调整为按运行时选择。
+- `SignedJsonClient` 改为复用 Signed HTTP 核心，保持现有 data-mid 与通知设备调用接口兼容。
+
 ## 0.3.1 - 2026-07-24
 
 - 将规范仓库迁至 `ZhaoYifei9/internal-service-sdk`，准备通过 Packagist 公开分发。
