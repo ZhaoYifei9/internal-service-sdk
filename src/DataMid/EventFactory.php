@@ -31,6 +31,11 @@ final class EventFactory
         };
     }
 
+    public function countryCode(): string
+    {
+        return $this->countryCode;
+    }
+
     /** @param array<string, mixed> $data */
     public function custom(
         string $eventType,
