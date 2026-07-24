@@ -7,6 +7,7 @@ namespace Internal\ServiceSdk\Tests;
 use InvalidArgumentException;
 use Internal\ServiceSdk\Auth\InternalHmacSigner;
 use Internal\ServiceSdk\DataMid\DataMidClient;
+use Internal\ServiceSdk\DataMid\EventType;
 use Internal\ServiceSdk\Http\HttpResponse;
 use PHPUnit\Framework\TestCase;
 
@@ -60,6 +61,22 @@ final class DataMidClientTest extends TestCase
 
         self::assertSame(12, $transport->requests[0]['timeout']);
         self::assertSame('NG', json_decode($transport->requests[0]['body'], true)[0]['country_code']);
+    }
+
+    public function testBatchResultDecodesPartialAcceptance(): void
+    {
+        $transport = new FakeTransport([new HttpResponse(
+            200,
+            '{"data":{"accepted":0,"rejected":1,"errors":[{"error":"invalid app"}]}}'
+        )]);
+
+        $result = $this->client($transport)->reportBatchResult([[
+            'event_type' => EventType::USER_OVERDUE_DAILY,
+            'phone' => 'test-phone',
+        ]]);
+
+        self::assertFalse($result->isComplete(1));
+        self::assertSame('invalid app', $result->firstError());
     }
 
     public function testBatchRejectsAnEventWithoutPhone(): void

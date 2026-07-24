@@ -3,7 +3,8 @@
 供各国家 PHP 业务项目复用的内部 HTTP 客户端，兼容 PHP 7.4。当前包含：
 
 - 固定九行 Canonical Request 的 `X-Internal-*` HMAC-SHA256 签名；
-- data-mid 单事件和批量事件上报；
+- data-mid 事件类型、稳定事件 ID、事件工厂、订单上下文脱敏和批量结果解析；
+- data-mid 单事件和批量事件 HTTP 上报；
 - service-notification FCM 设备注册；
 - toolbox-service 飞书 V2 告警和旧自定义消息接口；
 - 默认 Swoole 协程 HTTP Transport，以及可替换的 `TransportInterface`。
@@ -24,7 +25,7 @@
     }
   ],
   "require": {
-    "internal-services/service-sdk": "^0.1"
+    "internal-services/service-sdk": "^0.2"
   }
 }
 ```
@@ -35,6 +36,7 @@
 
 ```php
 use Internal\ServiceSdk\DataMid\DataMidClient;
+use Internal\ServiceSdk\DataMid\EventFactory;
 
 $client = new DataMidClient([
     'base_url' => getenv('MID_GATEWAY'),
@@ -44,19 +46,24 @@ $client = new DataMidClient([
     'timeout' => 10,
 ]);
 
-$response = $client->reportEvent([
-    'event_type' => 'user.registered',
-    'app_id' => '5001',
-    'user_id' => '42',
-    'phone' => '业务手机号',
-    'event_id' => '稳定幂等 ID',
-    'timestamp' => time(),
-    'data' => ['registered_at' => time()],
-]);
+$events = new EventFactory('NG');
+$event = $events->applicationSubmitted(
+    '42',
+    '5001',
+    '业务手机号',
+    'ORDER-001',
+    'PRODUCT-01',
+    'Quick Loan'
+);
+
+$response = $client->reportEvent($event->payload());
 ```
 
-`reportEvent()` 和 `reportBatch()` 返回 `HttpResponse`。data-mid 的 HTTP 200 批量响应仍可能包含逐条拒绝，调用方在
-推进业务断点前必须核对 `accepted/rejected`。
+`EventFactory` 统一生成协议字段、事件时间、稳定 `event_id` 和生产端去重 Key；`EventType`、`EventId`、
+`OrderContext` 也可独立使用。`reportEvent()` 和 `reportBatch()` 返回 `HttpResponse`。需要推进批处理断点时使用
+`reportBatchResult()`，只有 `BatchReportResult::isComplete($expected)` 为 `true` 才表示全部接收。
+
+SDK 不负责 Redis 锁、协程调度和失败日志：这些运行策略仍由国家项目的轻量 Adapter 决定。
 
 ## 通知设备注册
 

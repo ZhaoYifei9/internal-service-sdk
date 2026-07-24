@@ -60,4 +60,10 @@ final class DataMidClient
 
         return $this->http->request('POST', '/report/batch', $events, $timeout);
     }
+
+    /** @param array<int, array<string, mixed>> $events */
+    public function reportBatchResult(array $events, ?int $timeout = null): BatchReportResult
+    {
+        return BatchReportResult::fromHttpResponse($this->reportBatch($events, $timeout));
+    }
 }
