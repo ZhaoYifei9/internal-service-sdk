@@ -56,6 +56,9 @@ $response = $client->reportEvent($event->payload());
 `reportBatchResult()`，只有 `BatchReportResult::isComplete($expected)` 为 `true` 才表示全部接收。
 
 推荐业务入口使用 `DataMidReporter`：它统一命名事件、异步派发、生产端去重租约、失败释放和批量完整接收判断。
+
+已有用户登录、历史接入或迁移补偿使用 `userAssetSynced()` 校准中台资产，不得补发 `user.registered`。其中
+`app_id` 始终是规则与统计使用的业务逻辑 App，实际安装包通过 `package_app_id` 传递，供设备和短链路由使用。
 国家项目用 `CallableDispatcher` 适配协程，以 `DedupStoreInterface` 适配 Redis；SDK 自身不依赖具体框架或缓存实现。
 
 ## 内部管理端请求

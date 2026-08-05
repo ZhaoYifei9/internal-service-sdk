@@ -90,6 +90,55 @@ final class EventFactory
         );
     }
 
+    /**
+     * Idempotently synchronizes an existing business user without declaring a
+     * new registration. The logical app stays in the envelope; the installed
+     * package is carried separately in package_app_id.
+     *
+     * @param array<string, mixed> $data
+     */
+    public function userAssetSynced(
+        string $userId,
+        string $appId,
+        string $phone,
+        array $data = []
+    ): PreparedEvent {
+        $sourceUpdatedAt = isset($data['source_updated_at']) && is_numeric($data['source_updated_at'])
+            ? (int) $data['source_updated_at']
+            : $this->now();
+        $syncReason = strtoupper(trim((string) ($data['sync_reason'] ?? 'LOGIN')));
+        $packageAppId = trim((string) ($data['package_app_id'] ?? $appId));
+        $payload = array_merge($data, [
+            'phone' => $phone,
+            'package_app_id' => $packageAppId !== '' ? $packageAppId : $appId,
+            'source_updated_at' => $sourceUpdatedAt,
+            'sync_reason' => $syncReason !== '' ? $syncReason : 'LOGIN',
+        ]);
+        $eventId = EventId::business(
+            $this->countryCode,
+            $appId,
+            $userId,
+            EventType::USER_ASSET_SYNCED,
+            [
+                $sourceUpdatedAt,
+                $payload['sync_reason'],
+                $payload['package_app_id'],
+                (string) ($payload['device_id'] ?? $payload['install_uuid'] ?? ''),
+            ]
+        );
+
+        return $this->custom(
+            EventType::USER_ASSET_SYNCED,
+            $userId,
+            $appId,
+            $phone,
+            $payload,
+            $eventId,
+            null,
+            $sourceUpdatedAt
+        );
+    }
+
     /** @param array<string, mixed> $data */
     public function registrationStarted(string $appId, string $phone, array $data = []): PreparedEvent
     {
