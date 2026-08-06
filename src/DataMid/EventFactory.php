@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Internal\ServiceSdk\DataMid;
 
+use InvalidArgumentException;
+
 /**
  * Builds the stable data-mid event envelope and documented event payloads.
  */
@@ -73,6 +75,7 @@ final class EventFactory
     /** @param array<string, mixed> $data */
     public function userRegistered(string $userId, string $appId, array $data): PreparedEvent
     {
+        $data = $this->normalizeTimestampFields($data, ['registered_at']);
         $eventId = EventId::business(
             $this->countryCode,
             $appId,
@@ -103,12 +106,15 @@ final class EventFactory
         string $phone,
         array $data = []
     ): PreparedEvent {
-        $sourceUpdatedAt = isset($data['source_updated_at']) && is_numeric($data['source_updated_at'])
-            ? (int) $data['source_updated_at']
+        $sourceUpdatedAt = array_key_exists('source_updated_at', $data)
+            ? $this->unixSeconds($data['source_updated_at'], 'source_updated_at')
             : $this->now();
         $syncReason = strtoupper(trim((string) ($data['sync_reason'] ?? 'LOGIN')));
         $packageAppId = trim((string) ($data['package_app_id'] ?? $appId));
-        $payload = array_merge($data, [
+        $payload = array_merge($this->normalizeTimestampFields($data, [
+            'registered_at',
+            'last_active_at',
+        ]), [
             'phone' => $phone,
             'package_app_id' => $packageAppId !== '' ? $packageAppId : $appId,
             'source_updated_at' => $sourceUpdatedAt,
@@ -545,5 +551,39 @@ final class EventFactory
     private function now(): int
     {
         return (int) ($this->clock)();
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @param list<string> $fields
+     * @return array<string, mixed>
+     */
+    private function normalizeTimestampFields(array $data, array $fields): array
+    {
+        foreach ($fields as $field) {
+            if (array_key_exists($field, $data)) {
+                $data[$field] = $this->unixSeconds($data[$field], $field);
+            }
+        }
+
+        return $data;
+    }
+
+    /** @param mixed $value */
+    private function unixSeconds($value, string $field): int
+    {
+        if (is_int($value)) {
+            $timestamp = $value;
+        } elseif (is_string($value) && ctype_digit($value)) {
+            $timestamp = (int) $value;
+        } else {
+            throw new InvalidArgumentException("{$field} must be a Unix seconds timestamp");
+        }
+
+        if ($timestamp <= 0 || $timestamp > 253402300799) {
+            throw new InvalidArgumentException("{$field} must be a Unix seconds timestamp");
+        }
+
+        return $timestamp;
     }
 }

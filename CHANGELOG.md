@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- 收紧 data-mid 日期时间 Payload：命名工厂统一输出 JSON 整数 Unix 秒时间戳，资产同步和注册的可选时间字段
+  会规范纯数字秒值并拒绝日期字符串、浮点数及毫秒时间戳；逾期 `batch_date` 保持 `YYYY-MM-DD` 业务日期。
+
 ## 0.4.1 - 2026-08-06
 
 - 增加 `user.asset.synced` 命名事件与高阶上报入口，幂等同步已有用户资产，并明确区分业务逻辑 `app_id` 与实际安装 `package_app_id`；该事件不表示新注册。

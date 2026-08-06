@@ -7,6 +7,7 @@ namespace Internal\ServiceSdk\Tests;
 use Internal\ServiceSdk\DataMid\EventFactory;
 use Internal\ServiceSdk\DataMid\EventId;
 use Internal\ServiceSdk\DataMid\EventType;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class EventFactoryTest extends TestCase
@@ -146,6 +147,48 @@ final class EventFactoryTest extends TestCase
         self::assertSame('5002', $payload['data']['package_app_id']);
         self::assertSame('LOGIN', $payload['data']['sync_reason']);
         self::assertSame(1784347100, $payload['timestamp']);
+    }
+
+    public function testOptionalAssetTimestampsAreNormalizedToUnixSeconds(): void
+    {
+        $registered = $this->factory()->userRegistered('1001', '5001', [
+            'phone' => 'test-phone',
+            'registered_at' => '1784347000',
+        ])->payload();
+        $synced = $this->factory()->userAssetSynced('1001', '5001', 'test-phone', [
+            'package_app_id' => '5002',
+            'source_updated_at' => '1784347100',
+            'registered_at' => '1784347000',
+            'last_active_at' => '1784347050',
+            'sync_reason' => 'login',
+        ])->payload();
+
+        self::assertSame(1784347000, $registered['data']['registered_at']);
+        self::assertSame(1784347100, $synced['data']['source_updated_at']);
+        self::assertSame(1784347000, $synced['data']['registered_at']);
+        self::assertSame(1784347050, $synced['data']['last_active_at']);
+    }
+
+    /** @dataProvider invalidTimestampValues */
+    public function testOptionalAssetTimestampsRejectNonUnixSeconds($value): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('registered_at must be a Unix seconds timestamp');
+
+        $this->factory()->userRegistered('1001', '5001', [
+            'phone' => 'test-phone',
+            'registered_at' => $value,
+        ]);
+    }
+
+    /** @return iterable<string,array{mixed}> */
+    public static function invalidTimestampValues(): iterable
+    {
+        yield 'timezone-less string' => ['2026-08-06 10:00:00'];
+        yield 'offset-aware string' => ['2026-08-06T10:00:00+00:00'];
+        yield 'milliseconds' => [1784347000000];
+        yield 'float' => [1784347000.0];
+        yield 'zero' => [0];
     }
 
     private function factory(): EventFactory

@@ -55,10 +55,15 @@ $response = $client->reportEvent($event->payload());
 `OrderContext` 也可独立使用。`reportEvent()` 和 `reportBatch()` 返回 `HttpResponse`。需要推进批处理断点时使用
 `reportBatchResult()`，只有 `BatchReportResult::isComplete($expected)` 为 `true` 才表示全部接收。
 
+data-mid 事件字典中的日期时间字段在线上 Payload 中统一为 JSON 整数 Unix 秒时间戳。命名工厂会把可选数组中
+纯数字形式的秒时间戳规范为整数，并拒绝无时区/带 Offset 日期字符串、浮点数和毫秒时间戳；
+`user.overdue.daily.batch_date` 只是国家当地业务日期，继续使用 `YYYY-MM-DD`。
+
 推荐业务入口使用 `DataMidReporter`：它统一命名事件、异步派发、生产端去重租约、失败释放和批量完整接收判断。
 
 已有用户登录、历史接入或迁移补偿使用 `userAssetSynced()` 校准中台资产，不得补发 `user.registered`。其中
 `app_id` 始终是规则与统计使用的业务逻辑 App，实际安装包通过 `package_app_id` 传递，供设备和短链路由使用。
+`source_updated_at`、可选的 `registered_at` 与 `last_active_at` 必须是 Unix 秒时间戳；
 国家项目用 `CallableDispatcher` 适配协程，以 `DedupStoreInterface` 适配 Redis；SDK 自身不依赖具体框架或缓存实现。
 
 ## 内部管理端请求
