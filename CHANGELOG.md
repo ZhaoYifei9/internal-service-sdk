@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- 增加 `user.asset.synced` 命名事件与高阶上报入口，幂等同步已有用户资产，并明确区分业务逻辑 `app_id` 与实际安装 `package_app_id`；该事件不表示新注册。
+
 ## 0.4.0 - 2026-07-24
 
 - 增加 `DataMidReporter`、可注入调度器与生产端去重租约，统一命名事件、失败释放和批量结果判断。

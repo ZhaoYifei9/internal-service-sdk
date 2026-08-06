@@ -10,6 +10,7 @@ namespace Internal\ServiceSdk\DataMid;
 final class EventType
 {
     public const USER_REGISTERED = 'user.registered';
+    public const USER_ASSET_SYNCED = 'user.asset.synced';
     public const USER_ACTIVE = 'user.active';
     public const USER_PROFILE_UPDATED = 'user.profile.updated';
     public const USER_PROFILE_COMPLETED = 'user.profile.completed';
@@ -31,6 +32,7 @@ final class EventType
     {
         return [
             self::USER_REGISTERED,
+            self::USER_ASSET_SYNCED,
             self::USER_ACTIVE,
             self::USER_PROFILE_UPDATED,
             self::USER_PROFILE_COMPLETED,

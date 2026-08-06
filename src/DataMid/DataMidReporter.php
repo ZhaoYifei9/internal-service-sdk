@@ -156,6 +156,19 @@ class DataMidReporter
     }
 
     /** @param array<string, mixed> $data */
+    public function userAssetSynced(
+        string $userId,
+        string $appId,
+        string $phone,
+        array $data = []
+    ): void {
+        $this->dispatchPreparedEvent(
+            $this->eventFactory->userAssetSynced($userId, $appId, $phone, $data),
+            60
+        );
+    }
+
+    /** @param array<string, mixed> $data */
     public function registrationStarted(string $appId, string $phone, array $data = []): void
     {
         $this->dispatchPreparedEvent(

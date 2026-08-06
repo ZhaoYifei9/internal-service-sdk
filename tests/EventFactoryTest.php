@@ -78,6 +78,11 @@ final class EventFactoryTest extends TestCase
         $factory = $this->factory();
         $events = [
             $factory->userRegistered('1001', '5001', ['phone' => 'test-phone']),
+            $factory->userAssetSynced('1001', '5001', 'test-phone', [
+                'package_app_id' => '5002',
+                'sync_reason' => 'login',
+                'source_updated_at' => 1784347100,
+            ]),
             $factory->userActive('1001', '5001', 'test-phone', 600),
             $factory->profileUpdated('1001', '5001', 'test-phone', ['city' => 'Lagos'], 3600),
             $factory->profileCompleted('1001', '5001', 'test-phone'),
@@ -124,6 +129,23 @@ final class EventFactoryTest extends TestCase
             self::assertNotSame('', $event->eventId());
             self::assertSame('NG', $event->payload()['country_code']);
         }
+    }
+
+    public function testUserAssetSyncKeepsLogicalAndPackageAppsSeparate(): void
+    {
+        $event = $this->factory()->userAssetSynced('1001', '5001', 'test-phone', [
+            'package_app_id' => '5002',
+            'sync_reason' => 'login',
+            'source_updated_at' => 1784347100,
+            'device_id' => 'install-1',
+        ]);
+        $payload = $event->payload();
+
+        self::assertSame(EventType::USER_ASSET_SYNCED, $payload['event_type']);
+        self::assertSame('5001', $payload['app_id']);
+        self::assertSame('5002', $payload['data']['package_app_id']);
+        self::assertSame('LOGIN', $payload['data']['sync_reason']);
+        self::assertSame(1784347100, $payload['timestamp']);
     }
 
     private function factory(): EventFactory
